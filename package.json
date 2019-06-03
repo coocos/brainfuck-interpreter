@@ -4,11 +4,15 @@
   "description": "Brainfuck interpreter",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "npx mocha -r ts-node/register **.test.ts"
   },
   "author": "Kalle Lämsä",
   "license": "MIT",
   "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.7",
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
     "ts-node": "^8.2.0",
     "typescript": "^3.5.1"
   }

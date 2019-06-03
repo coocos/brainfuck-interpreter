@@ -1,1 +1,3 @@
-console.log("Hello Brainfuck!");
+export function load(program: string): string {
+  return program;
+}
