@@ -5,6 +5,7 @@ interface System {
     data: number;
   };
   program: string;
+  output: string;
 }
 
 export function strip(program: string): string {
@@ -20,15 +21,12 @@ export function load(program: string): System {
     pointers: {
       data: 0,
       instruction: 0
-    }
+    },
+    output: ""
   };
 }
 
-export function dump(system: System): void {
-  console.log(system);
-}
-
-export function execute(system: System): void {
+export function step(system: System): void {
   if (system.pointers.instruction >= system.program.length) {
     throw new Error("Exceeded program bounds");
   }
@@ -46,5 +44,20 @@ export function execute(system: System): void {
   } else if (instruction === "<") {
     system.pointers.data--;
     system.pointers.instruction++;
+  } else if (instruction == ".") {
+    system.output += String.fromCharCode(system.cells[system.pointers.data]);
+    system.pointers.instruction++;
+  }
+}
+
+export function execute(system: System): void {
+  try {
+    while (true) {
+      step(system);
+    }
+  } catch (err) {
+    if (system.pointers.instruction != system.program.length) {
+      throw err;
+    }
   }
 }
