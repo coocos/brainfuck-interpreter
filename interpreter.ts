@@ -1,21 +1,87 @@
+type Instruction = "+" | "-" | ">" | "<" | "[" | "]";
+
 interface System {
   cells: Uint8Array;
   pointers: {
     instruction: number;
     data: number;
   };
-  program: string;
+  program: Instruction[];
+  jumps: Jumps;
   output: string;
   done: boolean;
 }
 
-export function strip(program: string): string {
+interface Jumps {
+  [jump: number]: number;
+}
+
+const instructions = {
+  "+": (system: System) => {
+    system.cells[system.pointers.data]++;
+    system.pointers.instruction++;
+  },
+  "-": (system: System) => {
+    system.cells[system.pointers.data]--;
+    system.pointers.instruction++;
+  },
+  ">": (system: System) => {
+    system.pointers.data++;
+    system.pointers.instruction++;
+  },
+  "<": (system: System) => {
+    system.pointers.data--;
+    system.pointers.instruction++;
+  },
+  ".": (system: System) => {
+    system.output += String.fromCharCode(system.cells[system.pointers.data]);
+    system.pointers.instruction++;
+  },
+  "[": (system: System) => {
+    if (system.cells[system.pointers.data] === 0) {
+      system.pointers.instruction = system.jumps[system.pointers.instruction];
+      system.pointers.instruction++;
+    } else {
+      system.pointers.instruction++;
+    }
+  },
+  "]": (system: System) => {
+    if (system.cells[system.pointers.data] !== 0) {
+      system.pointers.instruction = system.jumps[system.pointers.instruction];
+      system.pointers.instruction++;
+    } else {
+      system.pointers.instruction++;
+    }
+  }
+};
+
+function mapJumps(program: Instruction[]): Jumps {
+  const jumps: Jumps = {};
+  const brackets: number[] = [];
+
+  for (let [address, instruction] of program.entries()) {
+    if (instruction === "[") {
+      brackets.push(address);
+    } else if (instruction === "]") {
+      const start = brackets.pop();
+      if (start !== undefined) {
+        jumps[start] = address;
+        jumps[address] = start;
+      }
+    }
+  }
+
+  return jumps;
+}
+
+function strip(program: string): Instruction[] {
   // TODO: Strip comments
-  return program;
+  return program.split("") as Instruction[];
 }
 
 export function load(program: string): System {
   const strippedProgram = strip(program);
+  const jumps = mapJumps(strippedProgram);
   return {
     cells: new Uint8Array(30_000),
     program: strippedProgram,
@@ -23,6 +89,7 @@ export function load(program: string): System {
       data: 0,
       instruction: 0
     },
+    jumps,
     output: "",
     done: false
   };
@@ -38,60 +105,12 @@ export function step(system: System): void {
   }
 
   const instruction = system.program[system.pointers.instruction];
-
-  if (instruction === "+") {
-    system.cells[system.pointers.data]++;
-    system.pointers.instruction++;
-  } else if (instruction === "-") {
-    system.cells[system.pointers.data]--;
-    system.pointers.instruction++;
-  } else if (instruction === ">") {
-    system.pointers.data++;
-    system.pointers.instruction++;
-  } else if (instruction === "<") {
-    system.pointers.data--;
-    system.pointers.instruction++;
-  } else if (instruction === ".") {
-    system.output += String.fromCharCode(system.cells[system.pointers.data]);
-    system.pointers.instruction++;
-  } else if (instruction === "[") {
-    if (system.cells[system.pointers.data] === 0) {
-      let brackets = 0;
-      let instruction = system.program[system.pointers.instruction];
-      while (brackets > 0 || instruction !== "]") {
-        instruction = system.program[system.pointers.instruction];
-        if (instruction === "[") {
-          brackets++;
-        } else if (instruction === "]") {
-          brackets--;
-        }
-        system.pointers.instruction++;
-      }
-    } else {
-      system.pointers.instruction++;
-    }
-  } else if (instruction === "]") {
-    if (system.cells[system.pointers.data] !== 0) {
-      let brackets = 0;
-      let instruction = system.program[system.pointers.instruction];
-      while (brackets > 0 || instruction !== "[") {
-        instruction = system.program[system.pointers.instruction];
-        if (instruction === "]") {
-          brackets++;
-        } else if (instruction === "[") {
-          brackets--;
-        }
-        system.pointers.instruction--;
-      }
-      system.pointers.instruction += 2;
-    } else {
-      system.pointers.instruction++;
-    }
-  }
+  instructions[instruction](system);
 }
 
 export function execute(system: System): void {
   while (!system.done) {
     step(system);
   }
+  console.log(system.output);
 }
