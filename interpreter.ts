@@ -6,6 +6,7 @@ interface System {
   };
   program: string;
   output: string;
+  done: boolean;
 }
 
 export function strip(program: string): string {
@@ -22,16 +23,22 @@ export function load(program: string): System {
       data: 0,
       instruction: 0
     },
-    output: ""
+    output: "",
+    done: false
   };
 }
 
 export function step(system: System): void {
   if (system.pointers.instruction >= system.program.length) {
-    throw new Error("Exceeded program bounds");
+    system.done = true;
+    return;
+  }
+  if (system.pointers.data < 0) {
+    throw new Error("Data pointer is negative");
   }
 
   const instruction = system.program[system.pointers.instruction];
+
   if (instruction === "+") {
     system.cells[system.pointers.data]++;
     system.pointers.instruction++;
@@ -44,20 +51,47 @@ export function step(system: System): void {
   } else if (instruction === "<") {
     system.pointers.data--;
     system.pointers.instruction++;
-  } else if (instruction == ".") {
+  } else if (instruction === ".") {
     system.output += String.fromCharCode(system.cells[system.pointers.data]);
     system.pointers.instruction++;
+  } else if (instruction === "[") {
+    if (system.cells[system.pointers.data] === 0) {
+      let brackets = 0;
+      let instruction = system.program[system.pointers.instruction];
+      while (brackets > 0 || instruction !== "]") {
+        instruction = system.program[system.pointers.instruction];
+        if (instruction === "[") {
+          brackets++;
+        } else if (instruction === "]") {
+          brackets--;
+        }
+        system.pointers.instruction++;
+      }
+    } else {
+      system.pointers.instruction++;
+    }
+  } else if (instruction === "]") {
+    if (system.cells[system.pointers.data] !== 0) {
+      let brackets = 0;
+      let instruction = system.program[system.pointers.instruction];
+      while (brackets > 0 || instruction !== "[") {
+        instruction = system.program[system.pointers.instruction];
+        if (instruction === "]") {
+          brackets++;
+        } else if (instruction === "[") {
+          brackets--;
+        }
+        system.pointers.instruction--;
+      }
+      system.pointers.instruction += 2;
+    } else {
+      system.pointers.instruction++;
+    }
   }
 }
 
 export function execute(system: System): void {
-  try {
-    while (true) {
-      step(system);
-    }
-  } catch (err) {
-    if (system.pointers.instruction != system.program.length) {
-      throw err;
-    }
+  while (!system.done) {
+    step(system);
   }
 }
