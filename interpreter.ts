@@ -108,9 +108,11 @@ export function step(system: System): void {
   instructions[instruction](system);
 }
 
-export function execute(system: System): void {
+export function execute(system: System, output: boolean = true): void {
   while (!system.done) {
     step(system);
   }
-  console.log(system.output);
+  if (output) {
+    console.log(system.output);
+  }
 }

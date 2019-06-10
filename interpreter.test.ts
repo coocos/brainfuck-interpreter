@@ -37,7 +37,7 @@ describe("Interpreter", () => {
     let program =
       "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.";
     let system = load(program);
-    execute(system);
+    execute(system, false);
     expect(system.output).to.equal("A");
   });
   it("should jump forward", () => {
@@ -89,7 +89,7 @@ describe("Interpreter", () => {
     let program =
       "+[-[<<[+[--->]-[<<<]]]>>>-]>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.";
     let system = load(program);
-    execute(system);
+    execute(system, false);
     expect(system.output).to.equal("hello world");
   });
 });
