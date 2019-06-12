@@ -92,4 +92,11 @@ describe("Interpreter", () => {
     execute(system, false);
     expect(system.output).to.equal("hello world");
   });
+  it("should ignore opening comment", () => {
+    let program =
+      "[this is a comment]+[-[<<[+[--->]-[<<<]]]>>>-]>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.";
+    let system = load(program);
+    execute(system, false);
+    expect(system.output).to.equal("hello world");
+  });
 });

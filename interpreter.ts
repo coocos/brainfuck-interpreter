@@ -1,4 +1,4 @@
-type Instruction = "+" | "-" | ">" | "<" | "[" | "]";
+type Instruction = "+" | "-" | ">" | "<" | "[" | "]" | "." | ",";
 
 interface System {
   cells: Uint8Array;
@@ -52,6 +52,12 @@ const instructions = {
     } else {
       system.pointers.instruction++;
     }
+  },
+  ",": (system: System) => {
+    system.pointers.instruction++;
+  },
+  skip: (system: System) => {
+    system.pointers.instruction++;
   }
 };
 
@@ -74,17 +80,16 @@ function mapJumps(program: Instruction[]): Jumps {
   return jumps;
 }
 
-function strip(program: string): Instruction[] {
-  // TODO: Strip comments
+function parse(program: string): Instruction[] {
   return program.split("") as Instruction[];
 }
 
-export function load(program: string): System {
-  const strippedProgram = strip(program);
-  const jumps = mapJumps(strippedProgram);
+export function load(source: string): System {
+  const program = parse(source);
+  const jumps = mapJumps(program);
   return {
     cells: new Uint8Array(30_000),
-    program: strippedProgram,
+    program,
     pointers: {
       data: 0,
       instruction: 0
@@ -100,12 +105,9 @@ export function step(system: System): void {
     system.done = true;
     return;
   }
-  if (system.pointers.data < 0) {
-    throw new Error("Data pointer is negative");
-  }
 
   const instruction = system.program[system.pointers.instruction];
-  instructions[instruction](system);
+  (instructions[instruction] || instructions["skip"])(system);
 }
 
 export function execute(system: System, output: boolean = true): void {
