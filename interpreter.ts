@@ -1,3 +1,5 @@
+import * as readline from "readline";
+
 type Instruction = "+" | "-" | ">" | "<" | "[" | "]" | "." | ",";
 
 interface System {
@@ -54,7 +56,18 @@ const instructions = {
     }
   },
   ",": (system: System) => {
-    system.pointers.instruction++;
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    return new Promise(resolve => {
+      rl.question("> ", input => {
+        system.cells[system.pointers.data] = input.charCodeAt(0);
+        system.pointers.instruction++;
+        rl.close();
+        resolve();
+      });
+    });
   },
   skip: (system: System) => {
     system.pointers.instruction++;
@@ -100,19 +113,21 @@ export function load(source: string): System {
   };
 }
 
-export function step(system: System): void {
+export async function step(system: System): Promise<void> {
   if (system.pointers.instruction >= system.program.length) {
     system.done = true;
     return;
   }
-
   const instruction = system.program[system.pointers.instruction];
-  (instructions[instruction] || instructions["skip"])(system);
+  await (instructions[instruction] || instructions["skip"])(system);
 }
 
-export function execute(system: System, output: boolean = true): void {
+export async function execute(
+  system: System,
+  output: boolean = true
+): Promise<void> {
   while (!system.done) {
-    step(system);
+    await step(system);
   }
   if (output) {
     console.log(system.output);
