@@ -68,9 +68,6 @@ const instructions = {
         resolve();
       });
     });
-  },
-  skip: (system: System) => {
-    system.pointers.instruction++;
   }
 };
 
@@ -94,7 +91,9 @@ function mapJumps(program: Instruction[]): Jumps {
 }
 
 function parse(program: string): Instruction[] {
-  return program.split("") as Instruction[];
+  return program
+    .split("")
+    .filter(token => /[\[\].,<>+-]/.test(token)) as Instruction[];
 }
 
 export function load(source: string): System {
@@ -119,7 +118,7 @@ export async function step(system: System): Promise<void> {
     return;
   }
   const instruction = system.program[system.pointers.instruction];
-  await (instructions[instruction] || instructions["skip"])(system);
+  await instructions[instruction](system);
 }
 
 export async function execute(
