@@ -42,18 +42,14 @@ const instructions = {
   "[": (system: System) => {
     if (system.cells[system.pointers.data] === 0) {
       system.pointers.instruction = system.jumps[system.pointers.instruction];
-      system.pointers.instruction++;
-    } else {
-      system.pointers.instruction++;
     }
+    system.pointers.instruction++;
   },
   "]": (system: System) => {
     if (system.cells[system.pointers.data] !== 0) {
       system.pointers.instruction = system.jumps[system.pointers.instruction];
-      system.pointers.instruction++;
-    } else {
-      system.pointers.instruction++;
     }
+    system.pointers.instruction++;
   },
   ",": (system: System) => {
     const rl = readline.createInterface({
